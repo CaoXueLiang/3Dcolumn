@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title></title>
+    <style></style>
+  </head>
+  <body>
+    <div class="totalContain">
+      <div class="columncontainer">
+        <div class="achiveImageContain">
+          <img class="bottomImage" src="./img/bottomRectBg.png" alt="" />
+          <img class="topRectImage" src="./img/topRectBg.png" alt="" />
+          <img class="leftImage" src="./img/developLeftImg.png" alt="" />
+          <img class="developTextImage" src="./img/developText.png" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const dataArray = [
+        { year: '2019年', num: 56 },
+        { year: '2020年', num: 64 },
+        { year: '2021年', num: 81 },
+        { year: '2022年', num: 97 },
+        { year: '2023年', num: 102 }
+      ];
+
+      const maxValue = Math.max.apply(
+        Math,
+        dataArray.map(function (item) {
+          return item.num;
+        })
+      );
+
+      window.onload = function () {
+        const totalContainElement = document.getElementsByClassName('totalContain')[0];
+        const columncontainerElement = document.getElementsByClassName('columncontainer')[0];
+        const achiveImageContain = document.getElementsByClassName('achiveImageContain')[0];
+        const bottomImage = document.getElementsByClassName('bottomImage')[0];
+        const leftImage = document.getElementsByClassName('leftImage')[0];
+        const developTextImage = document.getElementsByClassName('developTextImage')[0];
+
+        const totalNormalWidth = totalContainElement.clientWidth;
+        const initializeWidth = 1400;
+        const zoomFactor = totalNormalWidth / initializeWidth;
+        totalContainElement.style.padding = 152 * zoomFactor + 'px ' + 74 * zoomFactor + 'px ' + 50 * zoomFactor + 'px ' + 128.5 * zoomFactor + 'px';
+        achiveImageContain.style.top = 17.5 * zoomFactor + 'px';
+        achiveImageContain.style.left = 9.5 * zoomFactor + 'px';
+        achiveImageContain.style.height = 93.6 * zoomFactor + 'px';
+
+        bottomImage.style.top = 18 * zoomFactor + 'px';
+        bottomImage.style.left = 10 * zoomFactor + 'px';
+
+        leftImage.style.top = 0 * zoomFactor + 'px';
+        leftImage.style.left = 32 * zoomFactor + 'px';
+        leftImage.style.width = 93.6 * zoomFactor + 'px';
+        leftImage.style.height = 93.6 * zoomFactor + 'px';
+
+        developTextImage.style.left = (32 + 93.6 + 22) * zoomFactor + 'px';
+        developTextImage.style.width = 241 * zoomFactor + 'px';
+
+        const normalHeight = columncontainerElement.clientHeight;
+
+        const columnMiddleWidth = 63.9 * zoomFactor; // 柱体水平半间距
+        const middleMargin = 19 * zoomFactor; // 柱体垂直半间距
+        const ratio = (normalHeight - 150 * zoomFactor - 47 * zoomFactor * (dataArray.length - 1)) / maxValue; //系数
+        for (let index = 0; index < dataArray.length; index++) {
+          const element = dataArray[index];
+          dealData(element, index, normalHeight, columncontainerElement, ratio);
+        }
+
+        function dealData(item, index, normalHeight, parentElement, ratio) {
+          const myCanvas = document.createElement('canvas');
+          parentElement.appendChild(myCanvas);
+          const draw = myCanvas.getContext('2d');
+          const canvasRatio = getPixelRatio();
+          const correctWidth = 200 * zoomFactor;
+          myCanvas.style.width = correctWidth + 'px';
+          myCanvas.style.height = normalHeight + 'px';
+          myCanvas.width = correctWidth * canvasRatio;
+          myCanvas.height = normalHeight * canvasRatio;
+
+          //设置起点为左下角
+          draw.translate(0, myCanvas.height);
+          draw.scale(1, -1);
+          draw.scale(canvasRatio, canvasRatio);
+
+          const columnHeight = ratio * item.num;
+          const instanceHeight = 80 * zoomFactor + index * (47 * zoomFactor);
+          const bottomLeft = { x: 0, y: 0 + instanceHeight };
+          const bottomRight = { x: bottomLeft.x + columnMiddleWidth * 2, y: bottomLeft.y };
+          const bottomDown = { x: bottomLeft.x + columnMiddleWidth, y: bottomLeft.y - middleMargin };
+          const topLeft = { x: bottomLeft.x, y: bottomLeft.y + columnHeight };
+          const topUp = { x: bottomDown.x, y: topLeft.y + middleMargin };
+          const topRight = { x: bottomRight.x, y: bottomRight.y + columnHeight };
+          const topDown = { x: bottomDown.x, y: bottomDown.y + columnHeight };
+          drawCanvas(draw, topLeft, topUp, topRight, topDown, bottomLeft, bottomRight, bottomDown, item.year, item.num, canvasRatio);
+        }
+
+        function drawCanvas(ele, topLeft, topUp, topRight, topDown, bottomLeft, bottomRight, bottomDown, yearText, num, canvasRatio) {
+          // 圆柱上面，注意❗：最后在绘制左侧面和右侧面，这样正好可以将文字的倒影给裁剪掉
+          ele.beginPath();
+          ele.lineWidth = 1;
+          ele.strokeStyle = 'transparent';
+          ele.moveTo(topLeft.x, topLeft.y);
+          ele.lineTo(topUp.x, topUp.y);
+          ele.lineTo(topRight.x, topRight.y);
+          ele.lineTo(topDown.x, topDown.y);
+          ele.lineTo(topLeft.x, topLeft.y);
+          const grd1 = ele.createLinearGradient(topUp.x, topUp.y, topDown.x, topDown.y);
+          grd1.addColorStop(0, '#EEEEEE');
+          grd1.addColorStop(1, '#D8D8D8');
+          ele.fillStyle = '#bbdaff';
+          ele.fill();
+          ele.closePath();
+
+          // 底部年份标签背景
+          const tmpLabelWidth = 100 * zoomFactor;
+          const tantC = (bottomDown.x - bottomLeft.x) / (bottomLeft.y - bottomDown.y);
+          const yearLabelRightBottom = { x: bottomDown.x + tmpLabelWidth, y: bottomDown.y - tmpLabelWidth / tantC };
+          const yearLabelRightTop = { x: yearLabelRightBottom.x + columnMiddleWidth, y: yearLabelRightBottom.y + middleMargin };
+          ele.beginPath();
+          ele.strokeStyle = 'transparent';
+          ele.moveTo(bottomDown.x, bottomDown.y);
+          ele.lineTo(bottomRight.x, bottomRight.y);
+          ele.lineTo(yearLabelRightTop.x, yearLabelRightTop.y);
+          ele.lineTo(yearLabelRightBottom.x, yearLabelRightBottom.y);
+          ele.lineTo(bottomDown.x, bottomDown.y);
+          const grd4 = ele.createLinearGradient(
+            (bottomRight.x + bottomDown.x) / 2,
+            (bottomRight.y + bottomDown.y) / 2,
+            (yearLabelRightBottom.x + yearLabelRightTop.x) / 2,
+            (yearLabelRightBottom.y + yearLabelRightTop.y) / 2
+          );
+          grd4.addColorStop(0, 'rgba(23, 112, 255, 0.47)');
+          grd4.addColorStop(1, 'rgba(245, 247, 255, 0)');
+          ele.fillStyle = grd4;
+          ele.fill();
+          ele.closePath();
+
+          // 底部年份文本,先反转再添加
+          const textCavans = document.createElement('canvas');
+          const textCanvasCtx = textCavans.getContext('2d');
+          // textCanvasCtx.font = '400 21.6px PingFang SC';
+          textCanvasCtx.font = '400 ' + 21.6 * zoomFactor + 'px ' + 'PingFang SC';
+          const yearMeasure = textCanvasCtx.measureText(yearText);
+          const normalYearWidth = yearMeasure.width + 90 * zoomFactor;
+          const normalYearHeight = 50 * zoomFactor;
+
+          textCavans.style.width = normalYearWidth + 'px';
+          textCavans.style.height = normalYearHeight + 'px';
+          textCavans.width = normalYearWidth * canvasRatio;
+          textCavans.height = normalYearHeight * canvasRatio;
+          textCanvasCtx.translate(0, textCavans.height);
+          textCanvasCtx.scale(1, -1);
+          textCanvasCtx.scale(canvasRatio, canvasRatio);
+          textCanvasCtx.translate(textCavans.width / 2, textCavans.height / 2);
+          textCanvasCtx.rotate((Math.PI / 180) * 17);
+          textCanvasCtx.translate(-textCavans.width / 2, -textCavans.height / 2);
+          textCanvasCtx.beginPath();
+          // textCanvasCtx.font = '400 21.6px PingFang SC';
+          textCanvasCtx.font = '400 ' + 21.6 * zoomFactor + 'px ' + 'PingFang SC';
+          textCanvasCtx.fillStyle = '#3C4A66';
+          textCanvasCtx.textBaseline = 'middle';
+          textCanvasCtx.textAlign = 'right';
+          textCanvasCtx.fillText(yearText, textCavans.width / 2, textCavans.height / 2);
+          textCanvasCtx.closePath();
+          ele.drawImage(textCavans, bottomDown.x, (bottomDown.y + bottomRight.y) / 2 - 43 * zoomFactor, normalYearWidth, normalYearHeight);
+
+          // 顶部数量文字容器
+          const topContainCavans = document.createElement('canvas');
+          const topCtx = topContainCavans.getContext('2d');
+
+          // 数量文本
+          const numCavans = document.createElement('canvas');
+          const numCtx = numCavans.getContext('2d');
+          // numCtx.font = '500 50.4px Roboto'
+          numCtx.font = '500 ' + 50.4 * zoomFactor + 'px ' + 'Roboto';
+          const textMeasure1 = numCtx.measureText(num);
+          const numWidth = textMeasure1.width;
+          const numHeight = textMeasure1.actualBoundingBoxAscent + textMeasure1.actualBoundingBoxDescent + 17 * zoomFactor;
+          numCavans.style.width = numWidth + 'px';
+          numCavans.style.height = numHeight + 'px';
+          numCavans.width = numWidth * canvasRatio;
+          numCavans.height = numHeight * canvasRatio;
+          numCtx.translate(0, numCavans.height);
+          numCtx.scale(1, -1);
+          numCtx.scale(canvasRatio, canvasRatio);
+          numCtx.beginPath();
+          // numCtx.font = '500 50.4px Roboto';
+          numCtx.font = '500 ' + 50.4 * zoomFactor + 'px ' + 'Roboto';
+          const grd5 = ele.createLinearGradient(0, 0, numCavans.width, numCavans.height);
+          grd5.addColorStop(0, '#45A2FF');
+          grd5.addColorStop(1, '#004495');
+          numCtx.fillStyle = grd5;
+          numCtx.textBaseline = 'middle';
+          numCtx.textAlign = 'left';
+          numCtx.fillText(num, 0, numCavans.height / 2);
+          numCtx.closePath();
+
+          // 项单位文本
+          const unitCavans = document.createElement('canvas');
+          const unitCtx = unitCavans.getContext('2d');
+          // unitCtx.font = '500 16.2px PingFang SC';
+          unitCtx.font = '500 ' + 16.2 * zoomFactor + 'px ' + 'PingFang SC';
+          const textMeasure2 = unitCtx.measureText('项');
+          const unitWidth = textMeasure2.width;
+          const unitHeight = textMeasure2.actualBoundingBoxAscent + textMeasure2.actualBoundingBoxDescent + 17 * zoomFactor;
+          unitCavans.style.width = unitWidth + 'px';
+          unitCavans.style.height = unitHeight + 'px';
+          unitCavans.width = unitWidth * canvasRatio;
+          unitCavans.height = unitHeight * canvasRatio;
+          unitCtx.translate(0, unitCavans.height);
+          unitCtx.scale(1, -1);
+          unitCtx.scale(canvasRatio, canvasRatio);
+          unitCtx.beginPath();
+          // unitCtx.font = '500 16.2px PingFang SC';
+          unitCtx.font = '500 ' + 16.2 * zoomFactor + 'px ' + 'PingFang SC';
+          unitCtx.fillStyle = '#155EB3';
+          unitCtx.textBaseline = 'middle';
+          unitCtx.textAlign = 'left';
+          unitCtx.fillText('项', 0, unitCavans.height / 2);
+          unitCtx.closePath();
+
+          const numMarginRight = 4;
+          const topContainWidth = numWidth + unitWidth + numMarginRight;
+          const topContainHeight = numHeight;
+          topContainCavans.style.width = topContainWidth + 'px';
+          topContainCavans.style.height = topContainHeight + 'px';
+          topContainCavans.width = topContainWidth * canvasRatio;
+          topContainCavans.height = topContainHeight * canvasRatio;
+          topCtx.scale(canvasRatio, canvasRatio);
+          topCtx.drawImage(numCavans, 0, 0, numWidth, numHeight);
+          topCtx.drawImage(unitCavans, numWidth + numMarginRight, 0, unitWidth, unitHeight);
+          const originX = (columnMiddleWidth * 2 - topContainWidth) / 2;
+          ele.drawImage(topContainCavans, topLeft.x + originX, topLeft.y - 2, topContainWidth, topContainHeight);
+
+          // 数量文字和'项'单位的倒影
+          const shadowContainCavans = document.createElement('canvas');
+          const shadowCtx = shadowContainCavans.getContext('2d');
+          shadowContainCavans.style.width = topContainWidth + 'px';
+          shadowContainCavans.style.height = topContainHeight + 'px';
+          shadowContainCavans.width = topContainCavans.width;
+          shadowContainCavans.height = topContainCavans.height;
+          shadowCtx.globalAlpha = 0.2;
+          shadowCtx.translate(0, shadowContainCavans.height);
+          shadowCtx.scale(1, -1);
+          shadowCtx.scale(canvasRatio, canvasRatio);
+          shadowCtx.drawImage(topContainCavans, 0, 0, topContainWidth, topContainHeight);
+          ele.drawImage(shadowContainCavans, topLeft.x + originX, topLeft.y - topContainHeight - 3, topContainWidth, topContainHeight);
+
+          // 左侧
+          ele.beginPath();
+          ele.strokeStyle = 'transparent';
+          ele.moveTo(topLeft.x, topLeft.y);
+          ele.lineTo(topDown.x, topDown.y);
+          ele.lineTo(bottomDown.x, bottomDown.y);
+          ele.lineTo(bottomLeft.x, bottomLeft.y);
+          ele.lineTo(topLeft.x, topLeft.y);
+          const grd2 = ele.createLinearGradient(bottomDown.x, bottomDown.y, topLeft.x, topLeft.y);
+          grd2.addColorStop(0, '#66AFFF');
+          grd2.addColorStop(1, '#87BEFF');
+          ele.fillStyle = grd2;
+          ele.fill();
+          ele.closePath();
+
+          // 右侧
+          ele.beginPath();
+          ele.strokeStyle = 'transparent';
+          ele.moveTo(topDown.x, topDown.y);
+          ele.lineTo(topRight.x, topRight.y);
+          ele.lineTo(bottomRight.x, bottomRight.y);
+          ele.lineTo(bottomDown.x, bottomDown.y);
+          ele.lineTo(topDown.x, topDown.y);
+          const grd3 = ele.createLinearGradient(bottomDown.x, bottomDown.y, topLeft.x, topLeft.y);
+          grd3.addColorStop(0, '#4B95FF');
+          grd3.addColorStop(1, '#3889FE');
+          ele.fillStyle = grd3;
+          ele.fill();
+          ele.closePath();
+        }
+
+        function getPixelRatio() {
+          return 1.5;
+        }
+      };
+    </script>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  .totalContain {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100vh;
+    background-image: url('./img/bg.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    padding: 152px 74px 50px 128.5px;
+  }
+  .columncontainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .achiveImageContain {
+    position: absolute;
+    top: 17.5px;
+    left: 9.5px;
+    height: 93.6px;
+  }
+
+  .topRectImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+  }
+
+  .bottomImage {
+    position: absolute;
+    top: 18px;
+    left: 10px;
+    height: 100%;
+  }
+
+  .leftImage {
+    position: absolute;
+    left: 32px;
+    top: 0;
+    width: 93.6px;
+    height: 93.6px;
+  }
+
+  .developTextImage {
+    position: absolute;
+    width: 241px;
+    left: calc(32px + 93.6px + 22px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+</style>
